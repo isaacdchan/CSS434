@@ -15,7 +15,17 @@ public class EchoServer {
             ServerSocket server = new ServerSocket(Integer.parseInt(args[0]));
             while ( true ) {
                 Socket client = server.accept();
+                InputStream is = client.getInputStream();
+                byte[] data = new byte[1024];
+                is.read( data );
+
+                System.out.println( new String ( data ));
+
+                OutputStream os = client.getOutputStream();
+                os.write(data);
+
                 client.close();
+
             }
         } catch (IOException e) {
             e.printStackTrace( );
