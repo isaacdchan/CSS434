@@ -11,11 +11,8 @@ public class TcpClientDouble {
 			// establish a connection
 			Socket socket = new Socket( args[2], Integer.parseInt( args[0] ) );
 
-			InputStream in = socket.getInputStream( );
-			OutputStream out = socket.getOutputStream( );
-
-			ObjectInputStream o_in = new ObjectInputStream(in);
-			ObjectOutputStream o_out = new ObjectOutputStream(out);
+			ObjectOutputStream o_out = new ObjectOutputStream(socket.getOutputStream());
+			ObjectInputStream o_in = new ObjectInputStream (socket.getInputStream( ));
 
 			int size = Integer.parseInt( args[1] );
 			DoubleArray dataToSend = new DoubleArray(size); // initialize data

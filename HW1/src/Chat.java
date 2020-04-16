@@ -99,10 +99,10 @@ public class Chat {
             for (int i = 0; i < hosts.length; i++) {
                 // to intentionally create a misordered message deliveray,
                 // let's slow down the chat member #2.
-                try {
-                    if (rank == 2)
-                        Thread.currentThread().sleep(5000); // sleep 5 sec.
-                } catch (InterruptedException e) {}
+//                try {
+//                    if (rank == 2)
+//                        Thread.currentThread().sleep(5000); // sleep 5 sec.
+//                } catch (InterruptedException e) {}
 
                 // check if chat member #i has something
                 if (i != rank && indata[i].available() > 0) {

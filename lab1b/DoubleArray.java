@@ -6,9 +6,8 @@ public class DoubleArray implements Serializable {
 
     public DoubleArray(int size) {
         data = new double[size];
-        for (int i = 0; i < size;i++) {
+        for (int i = 0; i < size;i++)
             data[i] = (double) i;
-        }
     }
 
     public void print() {
