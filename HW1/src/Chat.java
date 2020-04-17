@@ -5,7 +5,7 @@ import java.util.*;   // Arraylist
 public class Chat {
     // Each element i of the following arrays represent a chat member[i]
     private Socket[] sockets;             // connection to i
-    private Integer[] stamps;
+    private int[] stamps;
 	private ArrayList<String> msgQueue;
 	private ArrayList<int[]> stampQueue;
 	private ArrayList<Integer> srcQueue;
@@ -22,7 +22,7 @@ public class Chat {
 
         // create sockets, inputs, outputs, and vector arrays
         sockets = new Socket[hosts.length];
-		stamps = new Integer[hosts.length];
+		stamps = new int[hosts.length];
 		msgQueue = new ArrayList<String>();
 		stampQueue = new ArrayList<int[]>();
 		srcQueue = new ArrayList<Integer>();
@@ -75,7 +75,6 @@ public class Chat {
 
         // now goes into a chat
         while (true) {
-            System.out.println("READY TO READ FROM CHAT");
             // read a message from keyboard and broadcast it to all the others.
             if (keyboard.ready()) {
                 // since keyboard is ready, read one line.
@@ -100,10 +99,10 @@ public class Chat {
             for (int i = 0; i < hosts.length; i++) {
                 // to intentionally create a misordered message deliveray,
                 // let's slow down the chat member #2.
-//                try {
-//                    if (rank == 2)
-//                        Thread.currentThread().sleep(5000); // sleep 5 sec.
-//                } catch (InterruptedException e) {}
+                try {
+                    if (rank == 2)
+                        Thread.currentThread().sleep(5000); // sleep 5 sec.
+                } catch (InterruptedException e) {}
 
                 // check if chat member #i has something
                 if (i != rank && indata[i].available() > 0) {
