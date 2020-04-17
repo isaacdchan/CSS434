@@ -75,6 +75,7 @@ public class Chat {
 
         // now goes into a chat
         while (true) {
+            System.out.println("READY TO READ FROM CHAT");
             // read a message from keyboard and broadcast it to all the others.
             if (keyboard.ready()) {
                 // since keyboard is ready, read one line.
