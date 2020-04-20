@@ -113,6 +113,7 @@ public class Chat {
                         String message = (String) inputs[i].readObject();
 
                         if (stampsTooDifferent(i, srcStamps)) {
+                            // defer message and add to queue
 							msgQueue.add(message);
 							stampQueue.add(srcStamps);
 							srcQueue.add(i);
@@ -125,13 +126,15 @@ public class Chat {
                 }
             }
 
-
+            // for each message in the msgQueue
             for (int i = 0; i < stampQueue.size(); i ++) {
             	int[] pendingStamp = stampQueue.get(i);
             	int pendingSrc = srcQueue.get(i);
             	String pendingMessage = msgQueue.get(i);
 
+            	// once again, check if it's similar enough to print
             	if (!stampsTooDifferent(pendingSrc, pendingStamp)) {
+            	    // if so, remove message info from all three queues
 					stampQueue.remove(i);
 					srcQueue.remove(i);
 					msgQueue.remove(i);
@@ -143,8 +146,13 @@ public class Chat {
         }
     }
 
+    // checks whether a message can be received based on
+    // the receiver's stamp and the sender's stamp
     public boolean stampsTooDifferent(int srcRank, int[] srcStamps) {
     	for (int i = 0; i < stamps.length; i++) {
+
+    	    // if the sender's sent count in our stamps is not exactly
+            // one less than the sender's sent count in their own stamp
     		if (i == srcRank && srcStamps[i] + 1 != stamps[i])
 				return false;
 			else {
