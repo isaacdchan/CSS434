@@ -1,58 +1,60 @@
 import mpi.*;   // for mpiJava
 
 public class MyProgram {
-    private final static int aSize = 100; // the size of dArray
+    private final static int arraySize = 100; // the size of dArray
     private final static int master = 0;  // the master rank
     private final static int tag = 0;     // Send/Recv's tag is always 0.
 
     public static void main(String[] args) throws MPIException {
         // Start the MPI library.
         MPI.Init(args);
+	int numNodes = MPI.COMM_WORLD.Size();
+	int myRank = MPI.COMM_WORLD.Rank();
 
         // compute my own stripe
-        int stripe = aSize / MPI.COMM_WORLD.Size(); // each portion of array
-        double[] dArray = null;
+        int sliceLength = arraySize / numNodes; // each portion of array
+        double[] arrayToCompute = null;
 
-        if (MPI.COMM_WORLD.Rank() == 0) { // master
+        if (myRank == 0) { // master
 
             // initialize dArray[100].
-            dArray = new double[aSize];
-            for (int i = 0; i < aSize; i++)
-                dArray[i] = i;
+            arrayToCompute = new double[arraySize];
+            for (int i = 0; i < arraySize; i++)
+                arrayToCompute[i] = i;
 
             // send a portion of dArray[100] to each slave
             // (1) implement by yourself
-            for (int rank = 1; rank < MPI.COMM_WORLD.size(); rank++)
-                MPI.COMM_WORLD.Send(dArray, stripe * rank, stripe, MPI.DOUBLE, rank, tag)
+            for (int rank = 1; rank < numNodes; rank++)
+                MPI.COMM_WORLD.Send(arrayToCompute, sliceLength * rank, sliceLength, MPI.DOUBLE, rank, tag);
 
         } else { // slaves: rank 1 to rank n - 1
 
             // allocates dArray[25].
-            dArray = new double[stripe];
+            arrayToCompute = new double[sliceLength];
 
             // receive a portion of dArray[100] from the master
             // (2) implement by yourself
-            MPI.COMM_WORLD.Recv(dArray, 0, stripe, MPI.DOUBLE, master, tag)
+            MPI.COMM_WORLD.Recv(arrayToCompute, 0, sliceLength, MPI.DOUBLE, master, tag);
         }
 
         // compute the square root of each array element
-        for (int i = 0; i < stripe; i++)
-            dArray[i] = Math.sqrt(dArray[i]);
+        for (int i = 0; i < sliceLength; i++)
+            arrayToCompute[i] = Math.sqrt(arrayToCompute[i]);
 
-        if (MPI.COMM_WORLD.Rank() == 0) { // master
+        if (myRank == 0) { // master
 
             // receive answers from each slave
             // (3) implement by yourself
-            for (int rank = 1; rank < aSize; rank++)
-                MPI.COMM_WORLD.Recv(dArray, 0, stripe, MPI.DOUBLE, rank, tag)
+            for (int rank = 1; rank < numNodes; rank++)
+                MPI.COMM_WORLD.Recv(arrayToCompute, rank * sliceLength, sliceLength, MPI.DOUBLE, rank, tag);
             // print out the results
-            for (int i = 0; i < aSize; i++)
-                System.out.println("dArray[ " + i + " ] = " + dArray[i]);
+            for (int i = 0; i < arraySize; i++)
+                System.out.println("Results[ " + i + " ] = " + arrayToCompute[i]);
         } else { // slaves: rank 0 to rank n - 1
 
             // send the results back to the master
             // (4) implement by yourself
-            MPI.COMM_WORLD.Send(dArray, stripe * rank, stripe, MPI.DOUBLE, 0, tag)
+            MPI.COMM_WORLD.Send(arrayToCompute, 0, sliceLength, MPI.DOUBLE, 0, tag);
 
         }
 
