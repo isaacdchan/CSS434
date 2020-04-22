@@ -1,0 +1,6 @@
+array a:
+array b:
+sending 3000 rows to rank 0
+result c:
+time elapsed = 1599078 msec
+rank[0] at cssmpi1h.uwb.edu: multiplication completed
