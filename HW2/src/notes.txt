@@ -1,0 +1,18 @@
+1) check if appropriate number of arguments
+ - size, max_time,heat_time, interval
+ - program is run using mpirun -n <num_machines> java <class_name> <class_args>
+
+2) mpi housekeeping
+ - init, find rank and number of nodes
+
+3) initialize argument arrays (cannot mpi.send primitives)
+
+4) if master node, assign args to arg arrays
+
+5) broadcast arg arrays to all other nodes
+
+6) initialize ONE-DIMENSIONAL arg array
+ - array size = size * size * 2 time steps
+
+7) begin timer
+

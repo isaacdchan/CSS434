@@ -14,13 +14,18 @@ public class Heat2D {
             System.exit(-1);
         }
 
+	// number of coordinates to calculate
         int size = Integer.parseInt(args[0]);
         int max_time = Integer.parseInt(args[1]);
+	// how long to initially heat the bottom center third
         int heat_time = Integer.parseInt(args[2]);
+	// how often to display results
         int interval = Integer.parseInt(args[3]);
         double r = a * dt / (dd * dd);
 
-        // create a space
+        // create a space initialize temperatures to 0.0
+	// if currently on p1, previous state's temps in p0
+	// vice-versa
         double[][][] z = new double[2][size][size];
         for (int p = 0; p < 2; p++)
             for (int x = 0; x < size; x++)
@@ -48,7 +53,9 @@ public class Heat2D {
 
             // keep heating the bottom until t < heat_time
             if (t < heat_time) {
-                for (int x = size / 3; x < size / 3 * 2; x++)
+		// only heat the center third bottommost row
+		// "heating" == repeatedly setting heat to 19
+                for (int x = size / 3; x < (size / 3) * 2; x++)
                     z[p][x][0] = 19.0; // heat
             }
 
@@ -58,21 +65,26 @@ public class Heat2D {
                 System.out.println("time = " + t);
                 for (int y = 0; y < size; y++) {
                     for (int x = 0; x < size; x++)
-                        System.out.print((int) (Math.floor(z[p][x][y] / 2))
+                        System.out.println((int) (Math.floor(z[p][x][y] / 2))
                                 + " ");
-                    System.out.println();
                 }
                 System.out.println();
             }
 
             // perform forward Euler method
+	    // if p = 0, p2 = 1.if p = 1, p2 = 0 
             int p2 = (p + 1) % 2;
-            for (int x = 1; x < size - 1; x++)
-                for (int y = 1; y < size - 1; y++)
+	    // ignore the outermost border
+            for (int x = 1; x < size - 1; x++) {
+                for (int y = 1; y < size - 1; y++) {
+		    // new temp at the location equals 
+		    // ((right_temp - 2) * current_temp) + left_temp
+		    // ((upper_temp - 2) * current_temp) + lower_temp
                     z[p2][x][y] = z[p][x][y] +
                             r * (z[p][x + 1][y] - 2 * z[p][x][y] + z[p][x - 1][y]) +
                             r * (z[p][x][y + 1] - 2 * z[p][x][y] + z[p][x][y - 1]);
-
+		}
+	    }	
         } // end of simulation
 
         // finish the timer
