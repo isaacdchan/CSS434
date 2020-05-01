@@ -65,8 +65,9 @@ public class Heat2D {
                 System.out.println("time = " + t);
                 for (int y = 0; y < size; y++) {
                     for (int x = 0; x < size; x++)
-                        System.out.println((int) (Math.floor(z[p][x][y] / 2))
+                        System.out.print((int) (Math.floor(z[p][x][y] / 2))
                                 + " ");
+		    System.out.println();
                 }
                 System.out.println();
             }
