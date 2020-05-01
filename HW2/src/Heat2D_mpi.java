@@ -106,7 +106,8 @@ public class Heat2D_mpi {
 
       // receive data only from the column directly to the left
       // column length will be the size
-      if (myRank == 0) {
+      
+      if (myRank == 0 && numNodes > 1) {
 	MPI.COMM_WORLD.Send(matrix, rightmost, size, MPI.DOUBLE, myRank + 1, 0); 
 	MPI.COMM_WORLD.Recv(matrix, rightmostPlusOne, size, MPI.DOUBLE, myRank + 1, 0); 
 
@@ -121,25 +122,25 @@ public class Heat2D_mpi {
 	MPI.COMM_WORLD.Send(matrix, rightmost, size, MPI.DOUBLE, myRank + 1, 0); 
 	MPI.COMM_WORLD.Recv(matrix, rightmostPlusOne, size, MPI.DOUBLE, myRank + 1, 0); 
       }
-      
-      // if master, collect data from slaves
-      if (myRank == 0) {
-	for (int i = 1; i < numNodes; i++) {
-	  int receivingIndex = flatten(p, startingIndices[i], 0, size);	  
-	  int receivingStripeLength = stripeWidths[i] * size;
-	  //System.out.println(receivingIndex + " | " + receivingStripeLength);
-	  MPI.COMM_WORLD.Recv(matrix, receivingIndex, receivingStripeLength, MPI.DOUBLE, i, 0);
-	}
 
-	// display intermediate results
-	if (interval[0] != 0 && (t % interval[0] == 0 || t == maxTime[0] - 1)) {
+      if (interval[0] != 0 && (t % interval[0] == 0 || t == maxTime[0] - 1)) {
+	// if master, collect data from slaves
+	if (myRank == 0) {
+	  for (int i = 1; i < numNodes; i++) {
+	    int receivingIndex = flatten(p, startingIndices[i], 0, size);	  
+	    int receivingStripeLength = stripeWidths[i] * size;
+	    MPI.COMM_WORLD.Recv(matrix, receivingIndex, receivingStripeLength, MPI.DOUBLE, i, 0);
+	  }
+
+	  // display intermediate results
 	  log(matrix, size, t, p);
-	}
-      } else {
-	int sendingIndex = flatten(p, startingIndex, 0, size);
-	MPI.COMM_WORLD.Send(matrix, sendingIndex, stripeWidth * size, MPI.DOUBLE, 0, 0); 
-      }
+	  logTime(startTime);
 
+	} else {
+	  int sendingIndex = flatten(p, startingIndex, 0, size);
+	  MPI.COMM_WORLD.Send(matrix, sendingIndex, stripeWidth * size, MPI.DOUBLE, 0, 0); 
+	}
+      }
       // perform forward Euler method
       int p2 = (p + 1) % 2;
       // ignore the outermost border if leftmost or rightmost slice
@@ -156,15 +157,12 @@ public class Heat2D_mpi {
 	    r * (matrix[flatten(p, x, y+1, size)] - 2 * matrix[flatten(p, x, y, size)] +
 	       	matrix[flatten(p, x, y-1,size)]);
 	}
-      }	
-    } // end of simulation
+      }
+    }
 
     // finish the timer
-    if (myRank == 0) {
-      Date endTime = new Date();
-      System.out.println("Elapsed time = " +
-	  (endTime.getTime() - startTime.getTime()));
-    }
+    if (myRank == 0)
+      logTime(startTime);
     MPI.Finalize();
   }
 
@@ -184,6 +182,12 @@ public class Heat2D_mpi {
       for (int x = size / 3; x < (size / 3) * 2; x++)
 	matrix[flatten(p, x, 0, size)] = 19.0; 
     }
+  }
+
+  private static void logTime(Date startTime) {
+    Date endTime = new Date();
+    System.out.println("Elapsed time = " +
+	(endTime.getTime() - startTime.getTime()));
   }
 
   private static void log(double[] matrix, int size, int t, int p) {
