@@ -1,0 +1,12 @@
+array a:
+array b:
+sending 750 rows to rank 0
+sending 750 rows to rank 1
+sending 750 rows to rank 2
+sending 750 rows to rank 3
+rank[1] at cssmpi3h.uwb.edu: multiplication completed
+rank[2] at cssmpi4h.uwb.edu: multiplication completed
+result c:
+time elapsed = 159508 msec
+rank[3] at cssmpi2h.uwb.edu: multiplication completed
+rank[0] at cssmpi1h.uwb.edu: multiplication completed
