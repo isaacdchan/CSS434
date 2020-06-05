@@ -6,15 +6,22 @@ import java.rmi.registry.*; // rmiregistry
 
 
 public class FileServer {
-	private BufferedReader input = null; // standard input
+    private BufferedReader input = null; // standard input
+    ServerImplementation serverObject;
 
+    public FileServer() throws RemoteException {
+        serverObject = new ServerImplementation( );
+        input = new BufferedReader(new InputStreamReader(System.in));
+    }
+    
     public static void main(String[] args) {
         int port = 28580;
         try {
             startRegistry(port);
-            ServerImplementation serverObject = new ServerImplementation( );
-            Naming.rebind( "rmi://localhost:" + port + "/fileserver", serverObject );
+			FileServer fileServer = new FileServer();
+            Naming.rebind( "rmi://localhost:" + port + "/fileserver", fileServer.serverObject);
             System.out.println("Server ready");
+            fileServer.loop();
         }
         catch (Exception ex) {
             ex.printStackTrace();
@@ -23,54 +30,23 @@ public class FileServer {
     }
 
     public void loop() {
-        String filename = null;
-        String mode = null;
-        try {
-            System.out.println("FileClient: Next file to open:");
-            System.out.print("\tFile name: ");
-            filename = input.readLine();
-            if (filename.equals("quit") || filename.equals("exit")) {
-                if (file.isStateWriteOwned())
-                    file.upload();
-                System.exit(0);
-            } else if (filename.equals("")) {
-                System.err.println("Do it again");
-                writebackThread.kill();
-                continue;
-            }
+        
+        while (true) {
+            try {
+                System.out.println("Enter \"exit\" to close server and write updates");
+                String exitCommand = input.readLine();
+                if (!exitCommand.equals("exit")) {
+                    System.err.println("Invalid input");
+                    continue;
+                } else {
+                    serverObject.writeToDisk();
+                    System.exit(-1);
+                }
 
-            System.out.print("\tHow(r/w): ");
-            mode = input.readLine();
-            if (!mode.equals("r") && !mode.equals("w")) {
-                System.err.println("Do it again");
-                writebackThread.kill();
-                continue;
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // Now, the main thread manipulates the cached file. It terminates
-        // the background thread that takes care of uploading the cached
-        // file to the server.
-        writebackThread.kill();
-
-        // look through the cache
-        if (file.hit(filename, mode) != true) {
-            // cache miss
-            if (file.isStateWriteOwned()) {
-                // replacement
-                file.upload();
-            }
-            // download a file from the server
-            if (file.download(filename, mode) == false) {
-                System.out.println("File downloaded failed");
-                continue;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
-        // open an editor
-        file.launchEditor(mode);
     }
     
     private static void startRegistry(int port) throws RemoteException {

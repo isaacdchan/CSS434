@@ -1,21 +1,23 @@
-import java.nio.file.*;
-import java.util.concurrent.TimeUnit;
+
+import java.util.*;
 import java.io.File;
+import java.nio.file.*;
+import java.io.FileOutputStream; 
+import java.io.OutputStream; 
 import java.rmi.server.*;
 import java.rmi.*;
-import java.util.*;
 
 public class ServerImplementation extends UnicastRemoteObject implements ServerInterface {
 	int port;
+	int waitingToWrite;
 	static Vector<FileCache> serverCache;
 	static HashMap<String, ClientInterface> clientList;
-	static HashMap<String, Boolean> uploadStatuses;
-	
+
 	public ServerImplementation() throws RemoteException {
 		port = 28580;
+		waitingToWrite = 0;
 		ServerImplementation.serverCache = new Vector<FileCache>();
 		ServerImplementation.clientList = new HashMap<String, ClientInterface>();
-		ServerImplementation.uploadStatuses = new HashMap<String, Boolean>();
 	}
 	
 	public ClientInterface lookupClient(String clientIP) {
@@ -28,7 +30,7 @@ public class ServerImplementation extends UnicastRemoteObject implements ServerI
 			return null;
 		}
 	}
-	
+
 	public ClientInterface registerClient(String clientIP) {
 		ClientInterface clientInterface = ServerImplementation.clientList.get(clientIP);
 		if (clientInterface != null) {
@@ -37,7 +39,6 @@ public class ServerImplementation extends UnicastRemoteObject implements ServerI
 		} else {
 			ClientInterface newClientInterface = lookupClient(clientIP);
 			clientList.put(clientIP, newClientInterface);
-			uploadStatuses.put(clientIP, false);
 
 			return newClientInterface;
 		}
@@ -66,9 +67,7 @@ public class ServerImplementation extends UnicastRemoteObject implements ServerI
 					cachedFile.invalidateReaders();
 					cachedFile.clearReaders();
 					cachedFile.state = "write_shared";
-	
-					uploadStatuses.put(clientIP, true);
-					notify();
+					notifyAll();
 					return true;
 				}
 			}
@@ -119,8 +118,11 @@ public class ServerImplementation extends UnicastRemoteObject implements ServerI
 		}
 		else {
 			System.out.println("\tFile does not exist in directory");
-			if (mode.equals("r"))
+			if (mode.equals("r")) {
+				serverCache.remove(fileCache);
+				System.out.println("\tRemoving file cache");
 				return null;
+			}
 		}
 		ServerImplementation.serverCache.add(fileCache);
 		return new FileContents(fileBytes);
@@ -136,34 +138,60 @@ public class ServerImplementation extends UnicastRemoteObject implements ServerI
 			return cachedWrite(fileCache, clientIP);
 		}
 	}
-
 	
 	FileContents cachedWrite(FileCache fileCache, String clientIP) {
 		System.out.println("Handling cached write");
 		String state = fileCache.state;
 		try {
-			if (state == "not_shared" || state == "read_shared") {
+			if (state.equals("not_shared") || state.equals("read_shared")) {
 				System.out.println("\tdownload NS/RS");
 				fileCache.owner = clientIP;
 				fileCache.state = "write_shared";
-			} else if (state == "ownership_change") {
-				System.out.println("\tdownload OC");
 
-			} else { // state == "write_shared"
-				System.out.println("\tdownload WS");
-				uploadStatuses.put(clientIP, false);
+			} else  {
+				// System.out.println("\tdownload OC");
+				// System.out.println("\tdownload WS");
 
-				fileCache.state = "ownership_change";
-				lookupClient(fileCache.owner).writeback();
+				waitingToWrite++;
+				while (fileCache.state.equals("ownership_change")) {
+					wait();
+				}
 
-				synchronized (this) { wait(); }
+				if (fileCache.state.equals("write_shared")){
+					fileCache.state = "ownership_change";
+					lookupClient(fileCache.owner).writeback();
+					synchronized (this) { wait(); }
+				}
+
+				waitingToWrite--;
+
 				fileCache.owner = clientIP;
+				if (waitingToWrite > 1)
+					notify();
+
 			}
 
+			System.out.println("RETURNING FILE CONTENTS TO: " + clientIP);
 			return new FileContents(fileCache.data);
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			return null;
+		}
+	}
+
+	public void writeToDisk() {
+		byte[] emptyBytes = new byte[0];
+
+		for (FileCache cache: serverCache) {
+			String fileName = cache.name;
+			String fileString = "/home/NETID/eyesack/434/hw4/src/" + fileName;
+			File file = new File(fileString);
+
+			try {
+				OutputStream os = new FileOutputStream(file);
+				os.write(emptyBytes);
+				os.write(cache.data);
+				os.close();
+			} catch (Exception e) {}
 		}
 	}
 

@@ -40,9 +40,7 @@ public class FileCache {
         try {
             for (String string : this.Readers)
                 this.lookupClient(string).invalidate();
-        }
-        catch (Exception exception) {
-        }
+        } catch (Exception exception) {}
     }
 
     public void clearReaders() {
@@ -53,5 +51,6 @@ public class FileCache {
         this.owner = clientIP;
         this.data = newData;
         this.state = "write_shared";
+        this.dataSize = data.length;
     }
 }
